@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5" />
   <title>Bingo Builder</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -17,6 +17,10 @@
 
       <label>Scale
         <input id="scaleInput" type="range" min="60" max="180" value="100" />
+      </label>
+
+      <label>Zoom
+        <input id="zoomInput" type="range" min="100" max="300" value="100" />
       </label>
 
       <button id="lockBtn" class="warn">Lock Layout</button>
@@ -41,10 +45,12 @@
 
   <main>
     <p class="hint">
-      Unlocked: click tile text to edit, drag tiles to move.<br>
+      Unlocked: click tile text to edit. Tile positions are fixed.<br>
       Locked: layout/text are locked, but stamp mode can still place translucent stamps. Long-press a tile to remove its stamp.
     </p>
-    <section id="board" class="board" aria-label="Bingo board"></section>
+    <section id="board" class="board" aria-label="Bingo board">
+      <div id="boardCanvas" class="board-canvas"></div>
+    </section>
   </main>
 
   <template id="tileTemplate">

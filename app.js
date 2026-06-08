@@ -5,6 +5,7 @@ const LONG_PRESS_MS = 550;
 const LONG_PRESS_MOVE_TOLERANCE = 12;
 
 const board = document.getElementById("board");
+const boardCanvas = document.getElementById("boardCanvas");
 const tileTemplate = document.getElementById("tileTemplate");
 
 const rowsInput = document.getElementById("rowsInput");
@@ -16,9 +17,9 @@ const stampSelect = document.getElementById("stampSelect");
 const clearStampsBtn = document.getElementById("clearStampsBtn");
 const resetBoardBtn = document.getElementById("resetBoardBtn");
 const scaleInput = document.getElementById("scaleInput");
+const zoomInput = document.getElementById("zoomInput");
 
 let state = loadState() || createBoardState(5, 5, 100);
-let activePointer = null;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -59,6 +60,7 @@ function createBoardState(rows, cols, scale) {
     rows,
     cols,
     scale,
+    viewZoom: 1,
     locked: false,
     stampMode: true,
     stampValue: "✅",
@@ -76,6 +78,9 @@ function loadState() {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed.tiles)) return null;
+    if (!parsed.viewZoom || Number.isNaN(Number(parsed.viewZoom))) {
+      parsed.viewZoom = 1;
+    }
     return parsed;
   } catch {
     return null;
@@ -86,6 +91,7 @@ function syncControls() {
   rowsInput.value = state.rows;
   colsInput.value = state.cols;
   scaleInput.value = state.scale;
+  zoomInput.value = Math.round((state.viewZoom || 1) * 100);
   stampModeInput.checked = !!state.stampMode;
   stampSelect.value = state.stampValue || "✅";
 
@@ -95,8 +101,14 @@ function syncControls() {
 }
 
 function render() {
+  const zoom = clamp(Number(state.viewZoom) || 1, 1, 3);
+  state.viewZoom = zoom;
   syncControls();
-  board.innerHTML = "";
+  boardCanvas.innerHTML = "";
+
+  const boardRect = board.getBoundingClientRect();
+  boardCanvas.style.width = `${Math.max(1, Math.round(boardRect.width * zoom))}px`;
+  boardCanvas.style.height = `${Math.max(1, Math.round(boardRect.height * zoom))}px`;
 
   state.tiles.forEach((tile) => {
     const fragment = tileTemplate.content.cloneNode(true);
@@ -105,10 +117,10 @@ function render() {
     const stampsEl = fragment.querySelector(".stamps");
 
     tileEl.dataset.id = tile.id;
-    tileEl.style.left = `${tile.x}px`;
-    tileEl.style.top = `${tile.y}px`;
-    tileEl.style.width = `${tile.w}px`;
-    tileEl.style.height = `${tile.h}px`;
+    tileEl.style.left = `${tile.x * zoom}px`;
+    tileEl.style.top = `${tile.y * zoom}px`;
+    tileEl.style.width = `${tile.w * zoom}px`;
+    tileEl.style.height = `${tile.h * zoom}px`;
     tileEl.classList.toggle("locked", state.locked);
 
     contentEl.textContent = tile.text;
@@ -169,27 +181,8 @@ function render() {
           saveState();
           render();
         }, LONG_PRESS_MS);
-        return;
+        event.preventDefault();
       }
-      if (event.target === contentEl) return;
-
-      const rect = tileEl.getBoundingClientRect();
-      const boardRect = board.getBoundingClientRect();
-
-      activePointer = {
-        pointerId: event.pointerId,
-        tile,
-        tileEl,
-        mode: "move",
-        startX: event.clientX,
-        startY: event.clientY,
-        origX: tile.x,
-        origY: tile.y,
-        maxW: boardRect.width - (rect.left - boardRect.left)
-      };
-
-      tileEl.setPointerCapture(event.pointerId);
-      event.preventDefault();
     });
 
     tileEl.addEventListener("pointermove", (event) => {
@@ -200,38 +193,19 @@ function render() {
           clearHoldTimer();
         }
       }
-
-      if (!activePointer || activePointer.pointerId !== event.pointerId) return;
-      if (activePointer.tile.id !== tile.id) return;
-
-      const boardRect = board.getBoundingClientRect();
-      const dx = event.clientX - activePointer.startX;
-      const dy = event.clientY - activePointer.startY;
-
-      const maxX = boardRect.width - tile.w;
-      const maxY = boardRect.height - tile.h;
-      tile.x = snap(clamp(activePointer.origX + dx, 0, maxX));
-      tile.y = snap(clamp(activePointer.origY + dy, 0, maxY));
-
-      tileEl.style.left = `${tile.x}px`;
-      tileEl.style.top = `${tile.y}px`;
-      tileEl.style.width = `${tile.w}px`;
-      tileEl.style.height = `${tile.h}px`;
     });
 
     const finishPointer = (event) => {
       clearHoldTimer();
-      if (!activePointer || activePointer.pointerId !== event.pointerId) return;
-      if (activePointer.tile.id !== tile.id) return;
-      tileEl.releasePointerCapture(event.pointerId);
-      activePointer = null;
-      saveState();
+      if (state.locked) {
+        saveState();
+      }
     };
 
     tileEl.addEventListener("pointerup", finishPointer);
     tileEl.addEventListener("pointercancel", finishPointer);
 
-    board.appendChild(fragment);
+    boardCanvas.appendChild(fragment);
   });
 }
 
@@ -300,6 +274,12 @@ resetBoardBtn.addEventListener("click", resetBoardWithConfirmation);
 scaleInput.addEventListener("change", () => {
   state.scale = clamp(Number(scaleInput.value) || 100, 60, 180);
   resetGridLayout();
+});
+
+zoomInput.addEventListener("input", () => {
+  state.viewZoom = clamp((Number(zoomInput.value) || 100) / 100, 1, 3);
+  saveState();
+  render();
 });
 
 window.addEventListener("beforeunload", saveState);
