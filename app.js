@@ -14,7 +14,7 @@ const lockBtn = document.getElementById("lockBtn");
 const stampModeInput = document.getElementById("stampModeInput");
 const stampSelect = document.getElementById("stampSelect");
 const clearStampsBtn = document.getElementById("clearStampsBtn");
-const resetLayoutBtn = document.getElementById("resetLayoutBtn");
+const resetBoardBtn = document.getElementById("resetBoardBtn");
 const scaleInput = document.getElementById("scaleInput");
 
 let state = loadState() || createBoardState(5, 5, 100);
@@ -103,7 +103,6 @@ function render() {
     const tileEl = fragment.querySelector(".tile");
     const contentEl = fragment.querySelector(".tile-content");
     const stampsEl = fragment.querySelector(".stamps");
-    const handleEl = fragment.querySelector(".resize-handle");
 
     tileEl.dataset.id = tile.id;
     tileEl.style.left = `${tile.x}px`;
@@ -139,7 +138,6 @@ function render() {
 
     tileEl.addEventListener("click", (event) => {
       if (!state.locked || !state.stampMode) return;
-      if (event.target === handleEl) return;
       if (tileEl.dataset.skipClick === "1") {
         tileEl.dataset.skipClick = "0";
         return;
@@ -177,21 +175,17 @@ function render() {
 
       const rect = tileEl.getBoundingClientRect();
       const boardRect = board.getBoundingClientRect();
-      const isResize = event.target === handleEl;
 
       activePointer = {
         pointerId: event.pointerId,
         tile,
         tileEl,
-        mode: isResize ? "resize" : "move",
+        mode: "move",
         startX: event.clientX,
         startY: event.clientY,
         origX: tile.x,
         origY: tile.y,
-        origW: tile.w,
-        origH: tile.h,
-        maxW: boardRect.width - (rect.left - boardRect.left),
-        maxH: boardRect.height - (rect.top - boardRect.top)
+        maxW: boardRect.width - (rect.left - boardRect.left)
       };
 
       tileEl.setPointerCapture(event.pointerId);
@@ -214,15 +208,10 @@ function render() {
       const dx = event.clientX - activePointer.startX;
       const dy = event.clientY - activePointer.startY;
 
-      if (activePointer.mode === "move") {
-        const maxX = boardRect.width - tile.w;
-        const maxY = boardRect.height - tile.h;
-        tile.x = snap(clamp(activePointer.origX + dx, 0, maxX));
-        tile.y = snap(clamp(activePointer.origY + dy, 0, maxY));
-      } else {
-        tile.w = snap(clamp(activePointer.origW + dx, MIN_SIZE, activePointer.maxW));
-        tile.h = snap(clamp(activePointer.origH + dy, MIN_SIZE, activePointer.maxH));
-      }
+      const maxX = boardRect.width - tile.w;
+      const maxY = boardRect.height - tile.h;
+      tile.x = snap(clamp(activePointer.origX + dx, 0, maxX));
+      tile.y = snap(clamp(activePointer.origY + dy, 0, maxY));
 
       tileEl.style.left = `${tile.x}px`;
       tileEl.style.top = `${tile.y}px`;
@@ -260,6 +249,19 @@ function resetGridLayout() {
   render();
 }
 
+function resetBoardWithConfirmation() {
+  const confirmed = window.confirm("Delete this board and start fresh? This cannot be undone.");
+  if (!confirmed) return;
+
+  const rows = clamp(Number(rowsInput.value) || state.rows, 1, 12);
+  const cols = clamp(Number(colsInput.value) || state.cols, 1, 12);
+  const scale = clamp(Number(scaleInput.value) || state.scale, 60, 180);
+  state = createBoardState(rows, cols, scale);
+  localStorage.removeItem(STORAGE_KEY);
+  saveState();
+  render();
+}
+
 newBoardBtn.addEventListener("click", () => {
   const rows = clamp(Number(rowsInput.value) || 5, 1, 12);
   const cols = clamp(Number(colsInput.value) || 5, 1, 12);
@@ -293,7 +295,7 @@ clearStampsBtn.addEventListener("click", () => {
   render();
 });
 
-resetLayoutBtn.addEventListener("click", resetGridLayout);
+resetBoardBtn.addEventListener("click", resetBoardWithConfirmation);
 
 scaleInput.addEventListener("change", () => {
   state.scale = clamp(Number(scaleInput.value) || 100, 60, 180);

@@ -140,29 +140,6 @@ main {
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
 }
 
-.resize-handle {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: repeating-linear-gradient(
-    -45deg,
-    #7b97d1,
-    #7b97d1 2px,
-    transparent 2px,
-    transparent 4px
-  );
-  cursor: nwse-resize;
-}
-
-.tile.locked .resize-handle {
-  display: none;
-}
-
 .stamp-toggle {
   display: inline-flex;
   align-items: center;
@@ -192,10 +169,5 @@ main {
   .tile-content {
     font-size: 0.95rem;
     padding: 0.45rem;
-  }
-
-  .resize-handle {
-    width: 22px;
-    height: 22px;
   }
 }

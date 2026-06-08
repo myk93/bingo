@@ -35,13 +35,13 @@
       </label>
 
       <button id="clearStampsBtn">Clear Stamps</button>
-      <button id="resetLayoutBtn">Reset Grid Layout</button>
+      <button id="resetBoardBtn">Reset Board</button>
     </div>
   </header>
 
   <main>
     <p class="hint">
-      Unlocked: click tile text to edit, drag tiles to move, drag corner to resize.<br>
+      Unlocked: click tile text to edit, drag tiles to move.<br>
       Locked: layout/text are locked, but stamp mode can still place translucent stamps. Long-press a tile to remove its stamp.
     </p>
     <section id="board" class="board" aria-label="Bingo board"></section>
@@ -51,7 +51,6 @@
     <article class="tile">
       <div class="tile-content" contenteditable="true"></div>
       <div class="stamps"></div>
-      <button class="resize-handle" title="Resize tile" aria-label="Resize tile"></button>
     </article>
   </template>
 
