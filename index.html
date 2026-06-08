@@ -7,8 +7,14 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="toolbar">
-    <h1>Bingo Builder</h1>
+  <header id="toolbar" class="toolbar">
+    <div class="toolbar-top">
+      <h1>Bingo Builder</h1>
+      <div class="toolbar-actions">
+        <button id="fullScreenBtn" type="button" title="Full screen lock mode" aria-label="Toggle full screen lock mode">⛶ Full</button>
+        <button id="collapseUiBtn" type="button" title="Collapse controls" aria-label="Collapse controls">▴</button>
+      </div>
+    </div>
 
     <div class="controls">
       <label>Rows <input id="rowsInput" type="number" min="1" max="12" value="5" /></label>
@@ -20,7 +26,7 @@
       </label>
 
       <label>Zoom
-        <input id="zoomInput" type="range" min="100" max="300" value="100" />
+        <input id="zoomInput" type="range" min="40" max="300" value="100" />
       </label>
 
       <button id="lockBtn" class="warn">Lock Layout</button>
@@ -46,10 +52,11 @@
   <main>
     <p class="hint">
       Unlocked: click tile text to edit. Tile positions are fixed.<br>
-      Locked: layout/text are locked, but stamp mode can still place translucent stamps. Long-press a tile to remove its stamp.
+      Locked: layout/text are locked, but stamp mode can still place translucent stamps. Long-press or double-tap a stamped tile to remove its stamp.
     </p>
     <section id="board" class="board" aria-label="Bingo board">
       <div id="boardCanvas" class="board-canvas"></div>
+      <div id="effectsLayer" class="effects-layer" aria-hidden="true"></div>
     </section>
   </main>
 

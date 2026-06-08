@@ -27,9 +27,26 @@ body {
   padding: 0.8rem 1rem calc(0.8rem + env(safe-area-inset-top));
 }
 
+.toolbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 h1 {
   margin: 0 0 0.4rem;
   font-size: 1.1rem;
+}
+
+.toolbar-top h1 {
+  margin: 0;
 }
 
 .controls {
@@ -37,6 +54,7 @@ h1 {
   flex-wrap: wrap;
   gap: 0.45rem 0.8rem;
   align-items: center;
+  margin-top: 0.55rem;
 }
 
 .controls label,
@@ -99,6 +117,39 @@ main {
   min-height: 100%;
 }
 
+.effects-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.sparkle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.2) 52%, rgba(255,255,255,0) 70%);
+  box-shadow: 0 0 10px rgba(255, 230, 120, 0.95), 0 0 18px rgba(120, 210, 255, 0.75);
+  animation: sparkle-pop 1200ms ease-out forwards;
+}
+
+@keyframes sparkle-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.4);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.8);
+  }
+}
+
 .tile {
   position: absolute;
   border: 2px solid #cad7ee;
@@ -154,6 +205,39 @@ main {
   gap: 0.3rem;
 }
 
+.toolbar.collapsed .controls {
+  display: none;
+}
+
+.toolbar.collapsed + main .hint {
+  display: none;
+}
+
+body.fullscreen-mode {
+  overflow: hidden;
+}
+
+body.fullscreen-mode .toolbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+body.fullscreen-mode main {
+  padding: 0.45rem;
+  padding-top: calc(3.5rem + env(safe-area-inset-top));
+}
+
+body.fullscreen-mode .hint {
+  display: none;
+}
+
+body.fullscreen-mode .board {
+  height: calc(100dvh - 4.1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  min-height: 280px;
+}
+
 @media (max-width: 768px) {
   .toolbar {
     padding-left: 0.7rem;
@@ -164,6 +248,11 @@ main {
     gap: 0.45rem;
   }
 
+  .toolbar-actions button {
+    min-height: 38px;
+    padding: 0.2rem 0.5rem;
+  }
+
   main {
     padding: 0.7rem;
   }
@@ -172,6 +261,12 @@ main {
     height: calc(100dvh - 230px - env(safe-area-inset-bottom));
     min-height: 420px;
     border-radius: 0.6rem;
+  }
+
+  body.fullscreen-mode .board {
+    height: calc(100dvh - 4rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: 260px;
+    border-radius: 0.5rem;
   }
 
   .tile-content {

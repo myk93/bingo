@@ -3,9 +3,15 @@ const SNAP = 10;
 const MIN_SIZE = 70;
 const LONG_PRESS_MS = 550;
 const LONG_PRESS_MOVE_TOLERANCE = 12;
+const DOUBLE_TAP_MS = 320;
+const MIN_ZOOM = 0.4;
+const MAX_ZOOM = 3;
+const SPARKLE_COUNT = 36;
 
 const board = document.getElementById("board");
 const boardCanvas = document.getElementById("boardCanvas");
+const effectsLayer = document.getElementById("effectsLayer");
+const toolbar = document.getElementById("toolbar");
 const tileTemplate = document.getElementById("tileTemplate");
 
 const rowsInput = document.getElementById("rowsInput");
@@ -18,8 +24,14 @@ const clearStampsBtn = document.getElementById("clearStampsBtn");
 const resetBoardBtn = document.getElementById("resetBoardBtn");
 const scaleInput = document.getElementById("scaleInput");
 const zoomInput = document.getElementById("zoomInput");
+const collapseUiBtn = document.getElementById("collapseUiBtn");
+const fullScreenBtn = document.getElementById("fullScreenBtn");
 
 let state = loadState() || createBoardState(5, 5, 100);
+let lockBeforeFullscreen = false;
+let collapsedBeforeFullscreen = false;
+let wasBingoAchieved = false;
+const lastTapByTile = new Map();
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -61,6 +73,8 @@ function createBoardState(rows, cols, scale) {
     cols,
     scale,
     viewZoom: 1,
+    uiCollapsed: false,
+    fullscreenMode: false,
     locked: false,
     stampMode: true,
     stampValue: "✅",
@@ -81,10 +95,113 @@ function loadState() {
     if (!parsed.viewZoom || Number.isNaN(Number(parsed.viewZoom))) {
       parsed.viewZoom = 1;
     }
+    if (typeof parsed.uiCollapsed !== "boolean") {
+      parsed.uiCollapsed = false;
+    }
+    if (typeof parsed.fullscreenMode !== "boolean") {
+      parsed.fullscreenMode = false;
+    }
     return parsed;
   } catch {
     return null;
   }
+}
+
+function setNativeFullscreen(shouldEnter) {
+  if (!document.documentElement.requestFullscreen || !document.exitFullscreen) return;
+
+  if (shouldEnter && !document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {
+      // iPhone browsers may not allow this; CSS fullscreen mode still works.
+    });
+  }
+
+  if (!shouldEnter && document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {
+      // Ignore if browser blocks or exits itself.
+    });
+  }
+}
+
+function getFitZoom() {
+  const boardWidth = board.clientWidth || 1;
+  const boardHeight = board.clientHeight || 1;
+
+  let contentWidth = boardWidth;
+  let contentHeight = boardHeight;
+
+  state.tiles.forEach((tile) => {
+    contentWidth = Math.max(contentWidth, tile.x + tile.w + 10);
+    contentHeight = Math.max(contentHeight, tile.y + tile.h + 10);
+  });
+
+  const fit = Math.min(boardWidth / contentWidth, boardHeight / contentHeight);
+  return clamp(fit, MIN_ZOOM, MAX_ZOOM);
+}
+
+function applyViewModes() {
+  toolbar.classList.toggle("collapsed", !!state.uiCollapsed);
+  document.body.classList.toggle("fullscreen-mode", !!state.fullscreenMode);
+}
+
+function isBingoAchieved() {
+  if (!state.tiles.length) return false;
+  const stamped = state.tiles.map((tile) => !!tile.stamp);
+  const rows = state.rows;
+  const cols = state.cols;
+
+  for (let r = 0; r < rows; r += 1) {
+    let ok = true;
+    for (let c = 0; c < cols; c += 1) {
+      if (!stamped[r * cols + c]) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return true;
+  }
+
+  for (let c = 0; c < cols; c += 1) {
+    let ok = true;
+    for (let r = 0; r < rows; r += 1) {
+      if (!stamped[r * cols + c]) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return true;
+  }
+
+  if (rows === cols) {
+    let diagA = true;
+    let diagB = true;
+    for (let i = 0; i < rows; i += 1) {
+      if (!stamped[i * cols + i]) diagA = false;
+      if (!stamped[i * cols + (cols - 1 - i)]) diagB = false;
+    }
+    if (diagA || diagB) return true;
+  }
+
+  return false;
+}
+
+function triggerSparkles() {
+  if (!effectsLayer) return;
+  effectsLayer.innerHTML = "";
+
+  for (let i = 0; i < SPARKLE_COUNT; i += 1) {
+    const sparkle = document.createElement("span");
+    sparkle.className = "sparkle";
+    sparkle.style.left = `${Math.random() * 100}%`;
+    sparkle.style.top = `${Math.random() * 100}%`;
+    sparkle.style.animationDelay = `${Math.floor(Math.random() * 220)}ms`;
+    sparkle.style.transform = `scale(${0.65 + Math.random() * 1.2})`;
+    effectsLayer.appendChild(sparkle);
+  }
+
+  setTimeout(() => {
+    effectsLayer.innerHTML = "";
+  }, 1400);
 }
 
 function syncControls() {
@@ -98,11 +215,19 @@ function syncControls() {
   lockBtn.textContent = state.locked ? "Unlock Layout" : "Lock Layout";
   lockBtn.classList.toggle("safe", state.locked);
   lockBtn.classList.toggle("warn", !state.locked);
+  lockBtn.disabled = !!state.fullscreenMode;
+
+  collapseUiBtn.textContent = state.uiCollapsed ? "▾" : "▴";
+  collapseUiBtn.title = state.uiCollapsed ? "Expand controls" : "Collapse controls";
+
+  fullScreenBtn.textContent = state.fullscreenMode ? "⤢ Exit" : "⛶ Full";
+  fullScreenBtn.classList.toggle("safe", !!state.fullscreenMode);
 }
 
 function render() {
-  const zoom = clamp(Number(state.viewZoom) || 1, 1, 3);
+  const zoom = clamp(Number(state.viewZoom) || 1, MIN_ZOOM, MAX_ZOOM);
   state.viewZoom = zoom;
+  applyViewModes();
   syncControls();
   boardCanvas.innerHTML = "";
 
@@ -152,6 +277,18 @@ function render() {
       if (!state.locked || !state.stampMode) return;
       if (tileEl.dataset.skipClick === "1") {
         tileEl.dataset.skipClick = "0";
+        return;
+      }
+
+      const now = Date.now();
+      const prevTap = lastTapByTile.get(tile.id) || 0;
+      const isDoubleTap = now - prevTap <= DOUBLE_TAP_MS;
+      lastTapByTile.set(tile.id, now);
+
+      if (isDoubleTap && tile.stamp) {
+        tile.stamp = "";
+        saveState();
+        render();
         return;
       }
 
@@ -207,6 +344,12 @@ function render() {
 
     boardCanvas.appendChild(fragment);
   });
+
+  const nowBingo = isBingoAchieved();
+  if (nowBingo && !wasBingoAchieved) {
+    triggerSparkles();
+  }
+  wasBingoAchieved = nowBingo;
 }
 
 function resetGridLayout() {
@@ -231,9 +374,41 @@ function resetBoardWithConfirmation() {
   const cols = clamp(Number(colsInput.value) || state.cols, 1, 12);
   const scale = clamp(Number(scaleInput.value) || state.scale, 60, 180);
   state = createBoardState(rows, cols, scale);
+  state.uiCollapsed = false;
+  state.fullscreenMode = false;
   localStorage.removeItem(STORAGE_KEY);
   saveState();
+  setNativeFullscreen(false);
   render();
+}
+
+function toggleCollapseUi() {
+  state.uiCollapsed = !state.uiCollapsed;
+  saveState();
+  render();
+}
+
+function toggleFullscreenMode() {
+  if (!state.fullscreenMode) {
+    lockBeforeFullscreen = !!state.locked;
+    collapsedBeforeFullscreen = !!state.uiCollapsed;
+    state.fullscreenMode = true;
+    state.locked = true;
+    state.uiCollapsed = true;
+    render();
+    state.viewZoom = getFitZoom();
+    saveState();
+    render();
+    setNativeFullscreen(true);
+    return;
+  }
+
+  state.fullscreenMode = false;
+  state.locked = lockBeforeFullscreen;
+  state.uiCollapsed = collapsedBeforeFullscreen;
+  saveState();
+  render();
+  setNativeFullscreen(false);
 }
 
 newBoardBtn.addEventListener("click", () => {
@@ -246,6 +421,7 @@ newBoardBtn.addEventListener("click", () => {
 });
 
 lockBtn.addEventListener("click", () => {
+  if (state.fullscreenMode) return;
   state.locked = !state.locked;
   saveState();
   render();
@@ -270,6 +446,8 @@ clearStampsBtn.addEventListener("click", () => {
 });
 
 resetBoardBtn.addEventListener("click", resetBoardWithConfirmation);
+collapseUiBtn.addEventListener("click", toggleCollapseUi);
+fullScreenBtn.addEventListener("click", toggleFullscreenMode);
 
 scaleInput.addEventListener("change", () => {
   state.scale = clamp(Number(scaleInput.value) || 100, 60, 180);
@@ -277,7 +455,7 @@ scaleInput.addEventListener("change", () => {
 });
 
 zoomInput.addEventListener("input", () => {
-  state.viewZoom = clamp((Number(zoomInput.value) || 100) / 100, 1, 3);
+  state.viewZoom = clamp((Number(zoomInput.value) || 100) / 100, MIN_ZOOM, MAX_ZOOM);
   saveState();
   render();
 });
@@ -294,6 +472,16 @@ window.addEventListener("resize", () => {
   });
   saveState();
   render();
+});
+
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && state.fullscreenMode) {
+    state.fullscreenMode = false;
+    state.locked = lockBeforeFullscreen;
+    state.uiCollapsed = collapsedBeforeFullscreen;
+    saveState();
+    render();
+  }
 });
 
 render();

@@ -7,8 +7,11 @@ A static bingo board app with local memory (`localStorage`).
 - Edit tile text quickly (unlocked mode)
 - Fixed tile positions (no dragging)
 - Lock/Unlock layout button
-- In locked mode, still place translucent stamps on tiles
+- In locked mode, place translucent stamps and remove with long-press or double-tap
+- Sparkle celebration animation when bingo is achieved
 - Board zoom control for mobile use (works in locked mode)
+- Collapse/expand toolbar with arrow button
+- Full-screen lock mode that auto-fits the board to screen
 - Reset board button with confirmation prompt before deletion
 - All data saved in browser local storage
 
