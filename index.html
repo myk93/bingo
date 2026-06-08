@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bingo Builder</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="toolbar">
+    <h1>Bingo Builder</h1>
+
+    <div class="controls">
+      <label>Rows <input id="rowsInput" type="number" min="1" max="12" value="5" /></label>
+      <label>Cols <input id="colsInput" type="number" min="1" max="12" value="5" /></label>
+      <button id="newBoardBtn">New Board</button>
+
+      <label>Scale
+        <input id="scaleInput" type="range" min="60" max="180" value="100" />
+      </label>
+
+      <button id="lockBtn" class="warn">Lock Layout</button>
+      <label class="stamp-toggle">
+        <input id="stampModeInput" type="checkbox" checked /> Stamp Mode
+      </label>
+
+      <label>Stamp
+        <select id="stampSelect">
+          <option value="✅">✅</option>
+          <option value="⭐">⭐</option>
+          <option value="❌">❌</option>
+          <option value="🔥">🔥</option>
+          <option value="💡">💡</option>
+        </select>
+      </label>
+
+      <button id="clearStampsBtn">Clear Stamps</button>
+      <button id="resetLayoutBtn">Reset Grid Layout</button>
+    </div>
+  </header>
+
+  <main>
+    <p class="hint">
+      Unlocked: click tile text to edit, drag tiles to move, drag corner to resize.<br>
+      Locked: layout/text are locked, but stamp mode can still place translucent stamps. Long-press a tile to remove its stamp.
+    </p>
+    <section id="board" class="board" aria-label="Bingo board"></section>
+  </main>
+
+  <template id="tileTemplate">
+    <article class="tile">
+      <div class="tile-content" contenteditable="true"></div>
+      <div class="stamps"></div>
+      <button class="resize-handle" title="Resize tile" aria-label="Resize tile"></button>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
