@@ -12,6 +12,7 @@ A static bingo board app with local memory (`localStorage`).
 - Board zoom control for mobile use (works in locked mode)
 - Collapse/expand toolbar with arrow button
 - Full-screen lock mode that auto-fits the board to screen
+- Needs a pickup button that shows a hashed time-based random motivation line
 - Reset board button with confirmation prompt before deletion
 - All data saved in browser local storage
 

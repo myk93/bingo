@@ -121,6 +121,20 @@ main {
   transform: scale(1);
 }
 
+.pickup-message {
+  margin: 0 0 0.8rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.65rem;
+  border: 1px solid #c9d7f2;
+  background: #f3f7ff;
+  color: #24385f;
+  font-size: 0.95rem;
+  font-weight: 700;
+  min-height: 2.65rem;
+  display: flex;
+  align-items: center;
+}
+
 .board {
   position: relative;
   height: 75vh;

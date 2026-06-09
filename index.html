@@ -30,6 +30,7 @@
       </label>
 
       <button id="lockBtn" class="warn">Lock Layout</button>
+      <button id="pickupBtn" type="button">Needs a pickup</button>
       <label class="stamp-toggle">
         <input id="stampModeInput" type="checkbox" checked /> Stamp Mode
       </label>
@@ -51,6 +52,7 @@
 
   <main>
     <div id="bingoToast" class="bingo-toast" aria-live="polite" aria-atomic="true"></div>
+    <div id="pickupMessage" class="pickup-message" aria-live="polite" aria-atomic="true"></div>
     <p class="hint">
       Unlocked: click tile text to edit. Tile positions are fixed.<br>
       Locked: layout/text are locked, but stamp mode can still place translucent stamps. Long-press or double-tap a stamped tile to remove its stamp.

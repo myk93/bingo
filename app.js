@@ -28,6 +28,8 @@ const scaleInput = document.getElementById("scaleInput");
 const zoomInput = document.getElementById("zoomInput");
 const collapseUiBtn = document.getElementById("collapseUiBtn");
 const fullScreenBtn = document.getElementById("fullScreenBtn");
+const pickupBtn = document.getElementById("pickupBtn");
+const pickupMessage = document.getElementById("pickupMessage");
 
 let state = loadState() || createBoardState(5, 5, 100);
 let lockBeforeFullscreen = false;
@@ -36,6 +38,24 @@ let previousBingoCount = 0;
 let hasRenderedOnce = false;
 let toastTimer = null;
 const lastTapByTile = new Map();
+let pickupPressCount = 0;
+
+const PICKUP_PHRASES = [
+  "dont be sad you is a snexy",
+  "the snexiest is la you",
+  "stupid nintendo dosent give us what we want",
+  "it can be wors they couldve shot us",
+  "you got this and you got snacks thats power",
+  "today is a good day to be dramatic and still win",
+  "if life lag, refresh and keep being iconic",
+  "you are premium vibes on a free trial world",
+  "no panic we cookin and we lookin fantastic",
+  "you are 99 percent chaos and 101 percent legend",
+  "big mood big heart big snexy energy",
+  "if they doubt you send them your glow",
+  "you didnt fail you unlocked bonus lore",
+  "we stay silly we stay strong we stay winning"
+];
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -47,6 +67,44 @@ function snap(value) {
 
 function uid() {
   return crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+}
+
+function getTimeOfDayBucket(hours) {
+  if (hours < 6) return "night";
+  if (hours < 12) return "morning";
+  if (hours < 18) return "afternoon";
+  return "evening";
+}
+
+function hashToIndex(text, modulo) {
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  const positive = hash >>> 0;
+  return positive % modulo;
+}
+
+function showPickupMessage() {
+  const now = new Date();
+  const seed = [
+    now.getFullYear(),
+    now.getMonth() + 1,
+    now.getDate(),
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds(),
+    now.getMilliseconds(),
+    getTimeOfDayBucket(now.getHours()),
+    pickupPressCount,
+    navigator.userAgent.length
+  ].join("|");
+
+  const index = hashToIndex(seed, PICKUP_PHRASES.length);
+  const phrase = PICKUP_PHRASES[index];
+  pickupMessage.textContent = phrase;
+  pickupPressCount += 1;
 }
 
 function createBoardState(rows, cols, scale) {
@@ -498,6 +556,7 @@ clearStampsBtn.addEventListener("click", () => {
 resetBoardBtn.addEventListener("click", resetBoardWithConfirmation);
 collapseUiBtn.addEventListener("click", toggleCollapseUi);
 fullScreenBtn.addEventListener("click", toggleFullscreenMode);
+pickupBtn.addEventListener("click", showPickupMessage);
 
 scaleInput.addEventListener("change", () => {
   state.scale = clamp(Number(scaleInput.value) || 100, 60, 180);
