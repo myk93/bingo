@@ -42,19 +42,29 @@ let pickupPressCount = 0;
 
 const PICKUP_PHRASES = [
   "dont be sad you is a snexy",
-  "the snexiest is la you",
+  "la snexiest is la you",
   "stupid nintendo dosent give us what we want",
-  "it can be wors they couldve shot us",
-  "you got this and you got snacks thats power",
-  "today is a good day to be dramatic and still win",
-  "if life lag, refresh and keep being iconic",
-  "you are premium vibes on a free trial world",
-  "no panic we cookin and we lookin fantastic",
-  "you are 99 percent chaos and 101 percent legend",
-  "big mood big heart big snexy energy",
-  "if they doubt you send them your glow",
-  "you didnt fail you unlocked bonus lore",
-  "we stay silly we stay strong we stay winning"
+  "it can be worse they couldve shot us",
+  "its a good time to give your snexy some kissies",
+  "are you sure you had pick up needed",
+  "la day is better with huggies and snacks",
+  "if life lag, give la snexy a huggie and reboot",
+  "you are premium snexy vibes on la deluxe trial",
+  "no panic, la snexy hero is cookin fantastic",
+  "you are 99 percent chaos and 101 percent snexy legend",
+  "if they doubt you, send la glow and kissies",
+  "you didnt fail, la story just needs huggies",
+  "we stay silly, we stay strong, la snexy wins",
+  "la moon said your snexy level is illegal tonight",
+  "bring huggies first, then we fight la drama",
+  "your snexy aura just gave la room bonus points",
+  "if heart is low, apply kissies and hydrate",
+  "la universe called, it wants your snexy backstory",
+  "zero stress, more huggies, maximum snexy output",
+  "you and me versus la chaos, with snacks",
+  "incoming kissies patch notes: confidence +200",
+  "la plan today is simple: huggies, laughs, and win",
+  "you are la snexy main character and we all know"
 ];
 
 function clamp(value, min, max) {
