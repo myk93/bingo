@@ -7,10 +7,12 @@ const DOUBLE_TAP_MS = 320;
 const MIN_ZOOM = 0.4;
 const MAX_ZOOM = 3;
 const SPARKLE_COUNT = 36;
+const BIG_SPARKLE_COUNT = 80;
 
 const board = document.getElementById("board");
 const boardCanvas = document.getElementById("boardCanvas");
 const effectsLayer = document.getElementById("effectsLayer");
+const bingoToast = document.getElementById("bingoToast");
 const toolbar = document.getElementById("toolbar");
 const tileTemplate = document.getElementById("tileTemplate");
 
@@ -30,7 +32,9 @@ const fullScreenBtn = document.getElementById("fullScreenBtn");
 let state = loadState() || createBoardState(5, 5, 100);
 let lockBeforeFullscreen = false;
 let collapsedBeforeFullscreen = false;
-let wasBingoAchieved = false;
+let previousBingoCount = 0;
+let hasRenderedOnce = false;
+let toastTimer = null;
 const lastTapByTile = new Map();
 
 function clamp(value, min, max) {
@@ -165,11 +169,12 @@ function applyViewModes() {
   document.body.classList.toggle("fullscreen-mode", !!state.fullscreenMode);
 }
 
-function isBingoAchieved() {
-  if (!state.tiles.length) return false;
+function getBingoCount() {
+  if (!state.tiles.length) return 0;
   const stamped = state.tiles.map((tile) => !!tile.stamp);
   const rows = state.rows;
   const cols = state.cols;
+  let total = 0;
 
   for (let r = 0; r < rows; r += 1) {
     let ok = true;
@@ -179,7 +184,7 @@ function isBingoAchieved() {
         break;
       }
     }
-    if (ok) return true;
+    if (ok) total += 1;
   }
 
   for (let c = 0; c < cols; c += 1) {
@@ -190,7 +195,7 @@ function isBingoAchieved() {
         break;
       }
     }
-    if (ok) return true;
+    if (ok) total += 1;
   }
 
   if (rows === cols) {
@@ -200,29 +205,54 @@ function isBingoAchieved() {
       if (!stamped[i * cols + i]) diagA = false;
       if (!stamped[i * cols + (cols - 1 - i)]) diagB = false;
     }
-    if (diagA || diagB) return true;
+    if (diagA) total += 1;
+    if (diagB) total += 1;
   }
 
-  return false;
+  return total;
 }
 
-function triggerSparkles() {
+function showBingoToast(count) {
+  if (!bingoToast) return;
+  if (toastTimer) {
+    clearTimeout(toastTimer);
+    toastTimer = null;
+  }
+
+  bingoToast.textContent = `congrats on ${count} bingo you are the greatiest`;
+  bingoToast.classList.add("show");
+
+  toastTimer = setTimeout(() => {
+    bingoToast.classList.remove("show");
+  }, 2600);
+}
+
+function triggerSparkles(count = 1) {
   if (!effectsLayer) return;
   effectsLayer.innerHTML = "";
+  board.classList.remove("bingo-celebrate");
 
-  for (let i = 0; i < SPARKLE_COUNT; i += 1) {
+  const totalSparkles = Math.max(SPARKLE_COUNT, Math.min(BIG_SPARKLE_COUNT, SPARKLE_COUNT + count * 10));
+
+  for (let i = 0; i < totalSparkles; i += 1) {
     const sparkle = document.createElement("span");
     sparkle.className = "sparkle";
+    if (Math.random() > 0.55) sparkle.classList.add("big");
     sparkle.style.left = `${Math.random() * 100}%`;
     sparkle.style.top = `${Math.random() * 100}%`;
-    sparkle.style.animationDelay = `${Math.floor(Math.random() * 220)}ms`;
+    sparkle.style.animationDelay = `${Math.floor(Math.random() * 320)}ms`;
     sparkle.style.transform = `scale(${0.65 + Math.random() * 1.2})`;
     effectsLayer.appendChild(sparkle);
   }
 
+  requestAnimationFrame(() => {
+    board.classList.add("bingo-celebrate");
+  });
+
   setTimeout(() => {
     effectsLayer.innerHTML = "";
-  }, 1400);
+    board.classList.remove("bingo-celebrate");
+  }, 1600);
 }
 
 function syncControls() {
@@ -366,11 +396,18 @@ function render() {
     boardCanvas.appendChild(fragment);
   });
 
-  const nowBingo = isBingoAchieved();
-  if (nowBingo && !wasBingoAchieved) {
-    triggerSparkles();
+  const bingoCount = getBingoCount();
+  if (!hasRenderedOnce) {
+    previousBingoCount = bingoCount;
+    hasRenderedOnce = true;
+    return;
   }
-  wasBingoAchieved = nowBingo;
+
+  if (bingoCount > previousBingoCount) {
+    triggerSparkles(bingoCount);
+    showBingoToast(bingoCount);
+  }
+  previousBingoCount = bingoCount;
 }
 
 function resetGridLayout() {

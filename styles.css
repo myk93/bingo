@@ -97,6 +97,30 @@ main {
   font-size: 0.9rem;
 }
 
+.bingo-toast {
+  position: sticky;
+  top: 0.35rem;
+  z-index: 20;
+  margin: 0 0 0.8rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.7rem;
+  background: linear-gradient(135deg, #ffec99 0%, #ffd166 30%, #ff8fab 100%);
+  color: #2b1130;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  box-shadow: 0 8px 24px rgba(163, 61, 122, 0.22);
+  transform: scale(0.98);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.bingo-toast.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
 .board {
   position: relative;
   height: 75vh;
@@ -135,6 +159,12 @@ main {
   animation: sparkle-pop 1200ms ease-out forwards;
 }
 
+.sparkle.big {
+  width: 15px;
+  height: 15px;
+  box-shadow: 0 0 14px rgba(255, 230, 120, 0.95), 0 0 24px rgba(120, 210, 255, 0.85);
+}
+
 @keyframes sparkle-pop {
   0% {
     opacity: 0;
@@ -159,6 +189,18 @@ main {
   overflow: hidden;
   user-select: none;
   touch-action: manipulation;
+}
+
+.board.bingo-celebrate {
+  animation: board-pop 600ms ease;
+  border-color: #ff8fab;
+  box-shadow: 0 0 0 3px rgba(255, 143, 171, 0.22) inset;
+}
+
+@keyframes board-pop {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.01); }
+  100% { transform: scale(1); }
 }
 
 .tile.locked {
