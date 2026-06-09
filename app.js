@@ -26,6 +26,9 @@ const scaleInput = document.getElementById("scaleInput");
 const zoomInput = document.getElementById("zoomInput");
 const collapseUiBtn = document.getElementById("collapseUiBtn");
 const fullScreenBtn = document.getElementById("fullScreenBtn");
+const exportBtn = document.getElementById("exportBtn");
+const importBtn = document.getElementById("importBtn");
+const importFileInput = document.getElementById("importFileInput");
 
 let state = loadState() || createBoardState(5, 5, 100);
 let lockBeforeFullscreen = false;
@@ -80,6 +83,100 @@ function createBoardState(rows, cols, scale) {
     stampValue: "✅",
     tiles
   };
+}
+
+function normalizeImportedState(input) {
+  if (!input || typeof input !== "object") return null;
+
+  const rows = clamp(Number(input.rows) || 5, 1, 12);
+  const cols = clamp(Number(input.cols) || 5, 1, 12);
+  const scale = clamp(Number(input.scale) || 100, 60, 180);
+  const normalized = createBoardState(rows, cols, scale);
+
+  normalized.viewZoom = clamp(Number(input.viewZoom) || 1, MIN_ZOOM, MAX_ZOOM);
+  normalized.uiCollapsed = !!input.uiCollapsed;
+  normalized.fullscreenMode = false;
+  normalized.locked = !!input.locked;
+  normalized.stampMode = typeof input.stampMode === "boolean" ? input.stampMode : true;
+  normalized.stampValue = typeof input.stampValue === "string" && input.stampValue ? input.stampValue : "✅";
+
+  const importedTiles = Array.isArray(input.tiles) ? input.tiles : [];
+  const maxX = board.clientWidth || 1000;
+  const maxY = board.clientHeight || 700;
+
+  normalized.tiles.forEach((tile, i) => {
+    const src = importedTiles[i];
+    if (!src || typeof src !== "object") return;
+
+    tile.text = typeof src.text === "string" ? src.text : "";
+    tile.stamp = typeof src.stamp === "string" ? src.stamp : "";
+    tile.x = clamp(Number(src.x) || tile.x, 0, maxX);
+    tile.y = clamp(Number(src.y) || tile.y, 0, maxY);
+    tile.w = clamp(Number(src.w) || tile.w, MIN_SIZE, Math.max(MIN_SIZE, maxX));
+    tile.h = clamp(Number(src.h) || tile.h, MIN_SIZE, Math.max(MIN_SIZE, maxY));
+  });
+
+  return normalized;
+}
+
+function closeImportMenu() {
+  const menu = exportBtn?.closest("details");
+  if (menu) {
+    menu.removeAttribute("open");
+  }
+}
+
+function exportBoardState() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    schemaVersion: 1,
+    app: "bingo-builder",
+    state
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  link.href = url;
+  link.download = `bingo-board-${stamp}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  closeImportMenu();
+}
+
+function requestImportBoard() {
+  importFileInput.value = "";
+  closeImportMenu();
+  importFileInput.click();
+}
+
+async function importBoardFromFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  try {
+    const rawText = await file.text();
+    const parsed = JSON.parse(rawText);
+    const sourceState = parsed && typeof parsed === "object" && parsed.state ? parsed.state : parsed;
+    const imported = normalizeImportedState(sourceState);
+
+    if (!imported) {
+      window.alert("Invalid import file.");
+      return;
+    }
+
+    const confirmed = window.confirm("Import this board and replace your current board?");
+    if (!confirmed) return;
+
+    state = imported;
+    saveState();
+    render();
+  } catch {
+    window.alert("Could not import file. Please use a valid JSON export.");
+  }
 }
 
 function saveState() {
@@ -448,6 +545,9 @@ clearStampsBtn.addEventListener("click", () => {
 resetBoardBtn.addEventListener("click", resetBoardWithConfirmation);
 collapseUiBtn.addEventListener("click", toggleCollapseUi);
 fullScreenBtn.addEventListener("click", toggleFullscreenMode);
+exportBtn.addEventListener("click", exportBoardState);
+importBtn.addEventListener("click", requestImportBoard);
+importFileInput.addEventListener("change", importBoardFromFile);
 
 scaleInput.addEventListener("change", () => {
   state.scale = clamp(Number(scaleInput.value) || 100, 60, 180);

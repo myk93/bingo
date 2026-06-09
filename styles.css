@@ -205,6 +205,52 @@ main {
   gap: 0.3rem;
 }
 
+.io-menu {
+  position: relative;
+}
+
+.io-menu > summary {
+  list-style: none;
+  border: 1px solid #c4cfe3;
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  background: #fff;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.io-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.io-menu[open] > summary {
+  background: #eef4ff;
+}
+
+.io-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  background: #fff;
+  border: 1px solid #c4cfe3;
+  border-radius: 0.65rem;
+  padding: 0.35rem;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.io-panel button {
+  width: 100%;
+  text-align: left;
+}
+
 .toolbar.collapsed .controls {
   display: none;
 }
